@@ -10,8 +10,7 @@ interface DrawArgs {
 
 
 export const draw = ({ctx, snakeBody, foodPosition}: DrawArgs) => {
-    console.log(foodPosition)
-    if (foodPosition) {
+    if (foodPosition) {    
         ctx.fillStyle = 'rgb(0, 200, 0)';
         ctx.fillRect(foodPosition?.x, foodPosition.y, SEGMENT_SIZE, SEGMENT_SIZE);
     }

@@ -1,5 +1,6 @@
 import React, { CSSProperties, useRef, useState } from 'react';
 import Canvas, { draw } from '../components/Canvas';
+import { detectKeyPress } from '../utils';
 import useGameLogic, { GAME_STATE } from './gameLogic';
 
 const GameWrapperStyle = {
@@ -38,7 +39,9 @@ const Game = () => {
     const { state, onKeyDownHandler, onReset} = useGameLogic({canvasHeight: 150, canvasWidth: 300, onGameOver, gameState});
     const {snakeBody, foodPosition} = state
     return (
-        <div tabIndex={0} style={GameWrapperStyle}>
+        <div tabIndex={0} style={GameWrapperStyle} 
+            onKeyDown={ (event) => onKeyDownHandler(detectKeyPress(event)) }
+            onBlur={() => console.log("Unfocused")}>
             <Canvas 
                 ref={canvasRef} 
                 draw={ (ctx: CanvasRenderingContext2D) => draw({ctx, snakeBody, foodPosition})}/>
