@@ -37,7 +37,7 @@ const Game = () => {
     const onGameOver = () => setGameState(GAME_STATE.GAME_OVER);
 
     const { state, onKeyDownHandler, onReset} = useGameLogic({canvasHeight: 150, canvasWidth: 300, onGameOver, gameState});
-    const {snakeBody, foodPosition} = state
+    const {snakeBody, foodPosition, speed} = state
     return (
         <div tabIndex={0} style={GameWrapperStyle} 
             onKeyDown={ (event) => onKeyDownHandler(detectKeyPress(event)) }
@@ -46,6 +46,8 @@ const Game = () => {
                 ref={canvasRef} 
                 draw={ (ctx: CanvasRenderingContext2D) => draw({ctx, snakeBody, foodPosition})}/>
             <Score>{`Your score: ${(snakeBody.length - 1) * 10}`}</Score>
+            <Score>{`Speed : ${speed}`}</Score>
+            <Score>{`Game State: ${gameState === GAME_STATE.GAME_OVER? 'GAME OVER' : 'RUNNING'}`}</Score>
         </div>
     )
 }

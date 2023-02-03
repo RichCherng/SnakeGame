@@ -1,7 +1,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
-const useInterval = (fn: () => void, delay: number | undefined) => {
+const useInterval = (fn: () => void, delay: number | null) => {
     // useRef to save the callback function of the CURRENT state
     const callback = useRef(fn);
 

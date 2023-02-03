@@ -35,13 +35,14 @@ export class Position {
 type UseGameLogicArg = {
     canvasHeight?: number;
     canvasWidth?: number;
-    onGameOver?: () => void;
+    onGameOver: () => void;
     gameState: GAME_STATE
 }
 
 interface GameState {
     snakeBody: Position[],
     foodPosition: Position
+    speed: Number
 }
 
 interface UseGameLogic {
@@ -77,29 +78,29 @@ enum ACTION {
 const moveSnake = (direction: DIRECTION, snakeBody: Position[]): Position[] => {
     // remove the tail
     // const body = (([head, ...body]) => body)(snakeBody); // take out the head using spread
-    const [head, ...bodyWithoutTail] = [...snakeBody].slice(-1);
+    const [head, ...body] = [...snakeBody];
     let newHead = null;
-    console.log(direction)
+    // console.log(direction)
     switch(direction) {
         case DIRECTION.DOWN:
-            console.log("MOVING DOWN")
+            // console.log("MOVING DOWN")
             newHead = new Position({ x: head.x, y: head.y + SEGMENT_SIZE});
             break;
         case DIRECTION.UP:
-            console.log("MOVING UP")
+            // console.log("MOVING UP")
             newHead = new Position({ x: head.x, y: head.y - SEGMENT_SIZE});
             break;
         case DIRECTION.LEFT:
-            console.log("Moving Left")
+            // console.log("Moving Left")
             newHead = new Position({ x: head.x - SEGMENT_SIZE, y: head.y});
             break;
         case DIRECTION.RIGHT:
-            console.log("moving right")
+            // console.log("moving right")
             newHead = new Position({ x: head.x + SEGMENT_SIZE, y: head.y});
             break;
     }
-
-    return [newHead, ...bodyWithoutTail];
+    // const newBody = body.length > 0? body.slice(0, body.length - 1): body
+    return [newHead, ...snakeBody.slice(0, snakeBody.length - 1)];
 }
 
 // generate food that does not overlap with snake body
@@ -133,7 +134,7 @@ const willEat = (foodPosition: Position, snakeHead: Position, direction: DIRECTI
 }
 
 const encodeInput = (str: String): ACTION => {
-    console.log(str);
+    // console.log(str);
     switch(str) {
         case INPUT_DIRECTION.ARROW_DOWN:
         case INPUT_DIRECTION.KEY_DOWN:
@@ -145,11 +146,21 @@ const encodeInput = (str: String): ACTION => {
         case INPUT_DIRECTION.KEY_LEFT:
             return ACTION.LEFT;
         case INPUT_DIRECTION.KEY_RIGHT:
-        case INPUT_DIRECTION.KEY_RIGHT:
+        case INPUT_DIRECTION.ARROW_RIGHT:
             return ACTION.RIGHT;
         default:
             return ACTION.UNKNOWN;
     }
+}
+
+const eatSelf = ( [head, ...body]: Position[]): boolean => {
+    if (body.length === 0) return false;
+    return !body.every( b => !b.equal(head));
+}
+
+const outOfBound = (head: Position, canvasHeight: Number, canvasWidth: Number): boolean => {
+    return head.x < 0 || head.x >= canvasWidth ||
+            head.y < 0 || head.y >= canvasHeight;
 }
 
 const useGameLogic = ({
@@ -161,6 +172,7 @@ const useGameLogic = ({
         const [direction, setDirection] = useState<DIRECTION | undefined>();
         const [snakeBody, setSnakeBody] = useState<Position[]>([new Position({x: 0, y:0})]);
         const [foodPosition, setFoodPosition] = useState<Position>(new Position({x: 0, y:0}));
+        const [speed, setSpeed] = useState<number>(500);
         const snakeHead = snakeBody[0];
 
         const randomPositionOnGridGenerator = RandomPositionOnGrid({ 
@@ -172,6 +184,7 @@ const useGameLogic = ({
             // initialize game
             if (!canvasHeight || !canvasWidth) return; // game not ready
             const newSnakeBody = [randomPositionOnGridGenerator.next().value || new Position({x: 0, y: 0})]
+            // const newSnakeBody = [new Position({x: 0, y: SEGMENT_SIZE}), new Position({x: 0, y: 0})]
             setSnakeBody(newSnakeBody);
             setFoodPosition(genNewFood(newSnakeBody, randomPositionOnGridGenerator));
             
@@ -180,10 +193,10 @@ const useGameLogic = ({
         // update the game
         // useInterval(moveSnake, gameState === GAME_STATE.RUNNING? MOVEMENT_SPEED: null);
         const gameTick = () => {
-
             console.log(snakeBody, foodPosition, direction)
             // Should only run when all initialization is done
-            if (!snakeBody || !foodPosition || direction === undefined) return;
+            if (!snakeBody || !foodPosition || direction === undefined ||
+                !canvasHeight || !canvasWidth) return;
 
 
             const snakePostUpdate: Position[] = moveSnake(direction, snakeBody);
@@ -192,11 +205,17 @@ const useGameLogic = ({
             //     return;
             // }
             if (willEat(foodPosition, snakePostUpdate[0], direction)) {
+                // console.log("EAT")
                 const newSnakeBody = [foodPosition, ...snakeBody];
                 setSnakeBody(newSnakeBody);
                 setFoodPosition(genNewFood(newSnakeBody, randomPositionOnGridGenerator));
-            } else if(false) {
+                setSpeed(speed * .95); // 5% faster
+
+                // console.log("SPEED: " + speed * .95);
+            } else if(eatSelf(snakePostUpdate) || outOfBound(snakePostUpdate[0], canvasHeight, canvasWidth)) {
+                // console.log("EAT SELF")
                 // snake hit the wall
+                onGameOver();
             } else {
                 setSnakeBody(snakePostUpdate);
             }
@@ -208,19 +227,19 @@ const useGameLogic = ({
             // console.log(event, e);
             switch(e) {
                 case ACTION.DOWN:
-                    console.log("GO DOWN")
+                    // console.log("GO DOWN")
                     setDirection(DIRECTION.DOWN);
                     break;
                 case ACTION.UP:
-                    console.log("GO Up")
+                    // console.log("GO Up")
                     setDirection(DIRECTION.UP);
                     break;
                 case ACTION.LEFT:
-                    console.log("Go Left")
+                    // console.log("Go Left")
                     setDirection(DIRECTION.LEFT);
                     break;
                 case ACTION.RIGHT:
-                    console.log("Go Right")
+                    // console.log("Go Right")
                     setDirection(DIRECTION.RIGHT);
                     break;
                 default:
@@ -229,10 +248,10 @@ const useGameLogic = ({
         }
         
         // update the game
-        useInterval(gameTick, 1000);
+        useInterval(gameTick, gameState === GAME_STATE.RUNNING? speed : null);
         // useInterval(() => console.log(direction), 1000)
         const logics: UseGameLogic = {
-            state: {snakeBody, foodPosition},
+            state: {snakeBody, foodPosition, speed},
             onKeyDownHandler: eventHandler,
 
         }

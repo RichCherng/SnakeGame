@@ -1,6 +1,6 @@
 import { Position } from '../../Game/gameLogic'
 
-export const SEGMENT_SIZE = 5;
+export const SEGMENT_SIZE = 10;
 
 interface DrawArgs {
     ctx: CanvasRenderingContext2D;
